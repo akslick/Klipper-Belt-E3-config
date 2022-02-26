@@ -1,0 +1,80 @@
+[virtual_sdcard]
+path: /home/pi/gcode_files
+
+# Override to support unlimited belt size
+# (homing Z simply resets its virtual position to 0.0)
+[homing_override]
+axes: z
+set_position_z: 0
+gcode:
+  {% if params.X is not defined and params.Y is not defined and params.Z is not defined %}G28 X0 Y0{% endif %}
+  {% if params.X is defined %}G28 X0{% endif %}
+  {% if params.Y is defined %}G28 Y0{% endif %}
+  G92 Z0
+
+
+[force_move]
+enable_force_move: True
+
+
+# Eject all printed parts from the belt
+[gcode_macro BED_EJECT]
+gcode:
+  TURN_OFF_HEATERS
+  G28 ; Re-home
+  G1 X50 Y50 F6000 ; Move hotend out of the way of the belt
+  G1 Z420 F4000 ; Unload belt
+  G28 Z0 ; Re-home Z
+
+[display_status]
+# for display messages in status panel
+
+[pause_resume]
+# for pause/resume functionality. 
+# Mainsail/fluidd needs gcode macros for `PAUSE`, `RESUME` and `CANCEL_PRINT` to make the buttons work.
+
+[idle_timeout]
+gcode:
+timeout: 10
+
+[gcode_macro PAUSE]
+rename_existing: BASE_PAUSE
+# default_parameter_X: 100    #edit to your park position
+# default_parameter_Y: 100    #edit to your park position
+# default_parameter_E: 1      #edit to your retract length
+gcode:
+    SAVE_GCODE_STATE NAME=PAUSE_state
+    BASE_PAUSE
+    G91
+    G1 E-{E} F2100
+    G90
+    G1 X{X} Y{Y} F6000
+
+[gcode_macro RESUME]
+rename_existing: BASE_RESUME
+# default_parameter_E: 1      #edit to your retract length
+gcode:
+    G91
+    G1 E{E} F2100
+    G90
+    RESTORE_GCODE_STATE NAME=PAUSE_state MOVE=1
+    BASE_RESUME
+
+[gcode_macro CANCEL_PRINT]
+rename_existing: BASE_CANCEL_PRINT
+gcode:
+    TURN_OFF_HEATERS
+    CLEAR_PAUSE
+    SDCARD_RESET_FILE
+    BASE_CANCEL_PRINT
+
+
+# Enable SD file loop support
+[sdcard_loop]
+
+# 'Marlin' style M808 compatibility macro for SDCard looping
+[gcode_macro M808]
+gcode:
+    {% if params.K is not defined and params.L is defined %}SDCARD_LOOP_BEGIN COUNT={params.L|int}{% endif %}
+    {% if params.K is not defined and params.L is not defined %}SDCARD_LOOP_END{% endif %}
+    {% if params.K is defined and params.L is not defined %}SDCARD_LOOP_DESIST{% endif %}
