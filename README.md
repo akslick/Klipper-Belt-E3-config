@@ -6,5 +6,5 @@ Using a Creality 427 board.
 Ender 3 stock hotend and a bmg extruder
 
 
-Copy both printer.cfg and files into your Klipper config folder and restart.
+Copy both printer.cfg and belt_e3_fluid.cfg files into your Klipper config folder and restart.
 
